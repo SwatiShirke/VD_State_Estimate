@@ -1,0 +1,4 @@
+string trajtype
+---
+bool success
+string message

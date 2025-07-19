@@ -1,0 +1,11 @@
+float64 vx
+float64 vy
+float64 r
+float64 x
+float64 y
+float64 psi
+float64 w_fl
+float64 w_fr
+float64 w_rl
+float64 w_rr
+float64 s
