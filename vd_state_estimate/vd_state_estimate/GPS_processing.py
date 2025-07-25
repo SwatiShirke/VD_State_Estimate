@@ -29,6 +29,7 @@ class GPS(Node):
         vehicle_transform = self.vehicle.get_transform() 
         gps_transform = carla.Transform(carla.Location(x=0, y=0, z=0))  
         self.gnss_bp = self.world.get_blueprint_library().find('sensor.other.gnss')
+        self.gnss_bp.set_attribute('sensor_tick', '0.01')
         self.gnss_sensor = self.world.spawn_actor(self.gnss_bp, gps_transform, attach_to=self.vehicle)
 
         #publisher
@@ -68,11 +69,11 @@ class GPS(Node):
         self.y = -self.R_earth * del_latitude
         
 
-        # pose = Pose2D()
-        # pose.x = self.x
-        # pose.y = self.y
-        # pose.theta = 0.0
-        # self.publisher.publish(pose)
+        pose = Pose2D()
+        pose.x = self.x
+        pose.y = self.y
+        pose.theta = 0.0
+        self.publisher.publish(pose)
 
         # print(pose.x)
         # print(pose.y)

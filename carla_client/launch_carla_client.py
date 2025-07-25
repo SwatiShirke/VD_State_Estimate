@@ -210,7 +210,6 @@ def get_actor_blueprints(world, filter, generation):
 class World(object):
     def __init__(self, carla_world, hud, traffic_manager, args):
         self.world = carla_world
-        
         self.sync = args.sync
         self.traffic_manager = traffic_manager
         self.actor_role_name = args.rolename
@@ -311,8 +310,6 @@ class World(object):
 
         # Get the blueprint library and filter for the vehicle blueprints
         vehicle_blueprints = self.world.get_blueprint_library().filter('*vehicle*')
-        # gnss_bp = self.world.get_blueprint_library().find('sensor.other.gnss')
-        
     
         # Get the map's spawn points
         spawn_points = self.world.get_map().get_spawn_points()
@@ -322,7 +319,7 @@ class World(object):
         ego_bp.set_attribute('role_name', 'hero')
         ego_bp.set_attribute("ros_name", 'ego_vehicle')
         self.player = self.world.spawn_actor(ego_bp, spawn_points[0])
-        # gnss_sensor = self.world.spawn_actor(gnss_bp, spawn_points[0], attach_to=self.player)
+
 
         ##spawn neighbours
         
