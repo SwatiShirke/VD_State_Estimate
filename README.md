@@ -75,8 +75,11 @@ VD_State_Estimation/
 ├── carla_client/                   # Pygame-based client for vehicle spawn/control
 ├── src/
 │   └── VD_State_Estimate/         # ROS2 nodes for state estimation
-├── launch/                         # ROS2 launch files
-├── sim_launch.py                   # Simulator + bag recording launcher
+    └── launch/
+        └──state_estimator_launch.py
+├── vd_sim
+    └── launch/                         # ROS2 launch files
+├──     └── sim_launch.py                   # Launches Simulator + MPC controller + bag recording launcher
 └── README.md
 ```
 
