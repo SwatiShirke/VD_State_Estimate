@@ -13,7 +13,7 @@ It integrates:
 ## 📥 Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/VD_State_Estimation.git
+git clone https://github.com/SwatiShirke/VD_State_Estimate.git
 cd VD_State_Estimation
 ```
 
@@ -30,7 +30,7 @@ cd VD_State_Estimation
 
 ## 🚀 How to Use
 
-### 1. Start CARLA with ROS bridge
+### 1. Start CARLA Server from a directory, where Carla is installed on your machine
 
 From the CARLA installation directory:
 
