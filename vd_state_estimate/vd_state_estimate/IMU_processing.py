@@ -29,6 +29,9 @@ class IMU(Node):
         ## add imu
         imu_bp = self.world.get_blueprint_library().find('sensor.other.imu')
         imu_bp.set_attribute('sensor_tick', '0.001')  # 100 Hz
+        imu_bp.set_attribute('noise_accel_stddev_x', '0.1')
+        imu_bp.set_attribute('noise_accel_stddev_y', '0.1')
+        imu_bp.set_attribute('noise_gyro_stddev_z', '0.1')
         imu_transform = carla.Transform(carla.Location(x=0.0, y=0.0, z=0.0))  # Center of vehicle
         self.imu_sensor = self.world.spawn_actor(imu_bp, imu_transform, attach_to=self.vehicle)
         
@@ -37,8 +40,11 @@ class IMU(Node):
         self.publisher = self.create_publisher(Imu, 'IMU_data', 10)
         self.x = 0.0
         self.y = 0.0 
+        self.filtering_type =  "median"
         self.imu_sensor.listen(self.imu_callback) 
-
+        self.buffer_size = 10
+        self.IMU_data = np.zeros((self.buffer_size, 3))  # IMU buffer 
+        self.buffer_index = 0
         
 
     def get_vehicle_by_role_name(self):
@@ -55,15 +61,23 @@ class IMU(Node):
         # print(f"  Gyroscope:     {data.gyroscope}")
         # print(f"  Compass:       {data.compass}") 
         msg = Imu()
-        msg.angular_velocity.z = data.gyroscope.z
-        msg.linear_acceleration.x = data.accelerometer.x
-        msg.linear_acceleration.y = data.accelerometer.y
-        self.publisher.publish(msg)
+        self.IMU_data[self.buffer_index] = [data.accelerometer.x, data.accelerometer.y, data.gyroscope.z]
+        self.buffer_index += 1 
+        self.buffer_index = self.buffer_index % self.buffer_size
 
-       
-    def get_mean_val(self):
-        # see if we want to get IMU data, 10 readings nd then avg 
-        pass 
+        
+        if self.filtering_type == "mean":                    #moving average 
+            processed_data = np.mean(self.IMU_data, axis = 0)  
+        elif self.filtering_type == "median":                #median filtering
+            processed_data = np.median(self.IMU_data, axis = 0)   #no filtering 
+        else :
+            processed_data = [data.accelerometer.x, data.accelerometer.y, data.gyroscope.z]
+        
+        msg.linear_acceleration.x = processed_data[0]
+        msg.linear_acceleration.y = processed_data[1]
+        msg.angular_velocity.z = processed_data[2]         
+        self.publisher.publish(msg) 
+
 
 
 def main():

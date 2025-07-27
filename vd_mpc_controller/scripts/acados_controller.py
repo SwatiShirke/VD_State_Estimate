@@ -95,9 +95,9 @@ def acados_controller(N, Tf, lf, lr):
     unscale = 1
     #cost matricesq
     # x, y, yaw, pitch, roll, vel
-    Q_mat = unscale * ca.vertcat(500, 500,   500, 500)
+    Q_mat = unscale * ca.vertcat(500, 500,   500, 100)
     R_mat = unscale * ca.vertcat( 1e-8, 1e-8, 1e-8)
-    Q_emat =  unscale * ca.vertcat(1000, 1000,  1000, 1000) 
+    Q_emat =  unscale * ca.vertcat(1000, 1000,  1000, 200) 
     control_rate_weight = ca.vertcat(1000, 1000, 1000)
     state_rate_weight = ca.vertcat(0, 0, 100, 0)
     prev_in = ca.vertcat(0,0,0)
@@ -139,16 +139,8 @@ def acados_controller(N, Tf, lf, lr):
     ocp.constraints.lbx = np.array([-2* np.pi ,vel_min])
     ocp.constraints.ubx = np.array([2 * np.pi, vel_max])
     ocp.constraints.idxbx = np.array([2,3] )
-    # ocp.constraints.lbu = np.array([dthrottle_min, ddelta_min])
-    # ocp.constraints.ubu = np.array([dthrottle_max, ddelta_max])
-
-    # set inequlaity constraints
-    # h_list = get_constraints(x_array, prev_state, yaw_rate, u_aaray, prev_in, steer_rate)
-    # ocp.model.con_h_expr = h_list
-    # ocp.dims.nh = h_list.shape[0]
-    # ocp.constraints.lh = np.array([0,0]) #np.array([0,0,0])        # yaw rate, delta rate constraints
-    # ocp.constraints.uh =   np.array([0.001, 0.001])#np.array([yaw_rate, steer_rate,state_error])             # Upper bound 
-    # ocp.model.lh = np.array([0,0]) # np.array([0,0,0])            # lower bound
+    
+  
     # ocp.model.uh = np.array([0.001, 0.001]) #np.array([yaw_rate, steer_rate,state_error])  
 
     ##update last states and input for rate control

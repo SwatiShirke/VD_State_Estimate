@@ -503,16 +503,19 @@ void ackerman_model_acados_setup_nlp_in(ackerman_model_solver_capsule* capsule, 
     // u
     int* idxbu = malloc(NBU * sizeof(int));
     
-    idxbu[0] = 1;
-    idxbu[1] = 2;
+    idxbu[0] = 0;
+    idxbu[1] = 1;
+    idxbu[2] = 2;
     double* lubu = calloc(2*NBU, sizeof(double));
     double* lbu = lubu;
     double* ubu = lubu + NBU;
     
-    lbu[0] = -0.7;
-    ubu[0] = 0.7;
+    lbu[0] = -8.5;
+    ubu[0] = 2.5;
     lbu[1] = -0.7;
     ubu[1] = 0.7;
+    lbu[2] = -0.7;
+    ubu[2] = 0.7;
 
     for (int i = 0; i < N; i++)
     {

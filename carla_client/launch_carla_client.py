@@ -326,10 +326,10 @@ class World(object):
     
         # Spawn a single ego vehicle (Lincoln MKZ)
         # print(type(spawn_points[1]))        
-        transform = carla.Transform(carla.Location(x=-58, y=28), carla.Rotation(yaw=180)) 
-        # vehicle_bp = random.choice(vehicle_blueprints) 
-        vehicle_bp = self.world.get_blueprint_library().find('vehicle.mini.cooper')       
-        self.test_vehicle = self.world.spawn_actor(vehicle_bp, transform)
+        # transform = carla.Transform(carla.Location(x=-58, y=28), carla.Rotation(yaw=180)) 
+        # # vehicle_bp = random.choice(vehicle_blueprints) 
+        # vehicle_bp = self.world.get_blueprint_library().find('vehicle.mini.cooper')       
+        # self.test_vehicle = self.world.spawn_actor(vehicle_bp, transform)
 
         #  # Spawn a single ego vehicle (Lincoln MKZ)
         # # print(type(spawn_points[1]))        

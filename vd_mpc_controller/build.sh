@@ -4,7 +4,7 @@ echo "building ackerman nmpc"
 cd ../../..
 
 source install/setup.bash
-cd src/Vehicle_MPC/vd_mpc_controller
+cd src/VD_State_Estimate/vd_mpc_controller
 source ~/acados/mpcenv/bin/activate
 cd scripts
 python3 acados_controller.py 

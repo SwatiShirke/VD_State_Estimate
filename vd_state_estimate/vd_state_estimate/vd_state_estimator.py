@@ -15,7 +15,7 @@ from vd_state_estimate.EKF import EKF
 class state_estim_node(Node):
     def __init__(self):
         super().__init__('state_estimation')
-        self.publisher = self.create_publisher(Pose2D,"vehicle_pose", 1)
+        self.publisher = self.create_publisher(Pose2D,"/vehicle_est_pose", 1)
         self.create_subscription(Imu, 'IMU_data', self.IMU_callback ,10)
         self.create_subscription(Pose2D, 'GPS_location', self.GPS_callback ,10)
 
@@ -26,8 +26,8 @@ class state_estim_node(Node):
         self.GPS_init_flag = False              #wether initial reading got from reading or not 
         self.X = np.array([0,0, 0,0,0,0,0,0])
         self.P = np.zeros((8,8))        
-        w_g = 0.1
-        w_a = 0.001
+        w_g = 0.01
+        w_a = 0.01
         w_ba = [0.1, 0.1]
         w_bg = 0.001
         

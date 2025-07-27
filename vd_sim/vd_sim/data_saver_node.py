@@ -1,8 +1,6 @@
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-#from rotor_tm_msgs.msg import FMNCommand, TrajCommand, PositionCommand
-
 from carla_msgs.msg import CarlaEgoVehicleControl
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Quaternion
@@ -11,6 +9,7 @@ from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 import shutil
 import os
 from std_msgs.msg import Float32
+from geometry_msgs.msg import Pose2D
 
 class BagWriterNode(Node):
     def __init__(self):
@@ -41,6 +40,7 @@ class BagWriterNode(Node):
         self.create_bag_topic('/carla/ego_vehicle/vehicle_control_cmd', 'carla_msgs/msg/CarlaEgoVehicleControl')
         self.create_bag_topic('/carla/ego_vehicle/waypoints', 'nav_msgs/msg/Path')
         self.create_bag_topic( '/norm_error', 'std_msgs/msgs/Float32')
+        self.create_bag_topic( '/vehicle_est_pose', 'geometry_msgs/msgs/Pose2D')
 
         
         # Subscriptions
@@ -53,6 +53,7 @@ class BagWriterNode(Node):
         self.create_subscription(CarlaEgoVehicleControl, "/carla/ego_vehicle/vehicle_control_cmd", self.control_input_callback, qos_profile)
         self.create_subscription(Path, "/carla/ego_vehicle/waypoints", self.desired_traj_callback, qos_profile)
         self.create_subscription(Float32, "/norm_error", self.err_callback,1  )
+        self.create_subscription(Pose2D, "/vehicle_est_pose", self.vehicle_est_pose_callback, 1)
 
     def create_bag_topic(self, topic_name, type_name):
         """Create a topic in the ROS bag."""
@@ -108,6 +109,12 @@ class BagWriterNode(Node):
         self.get_logger().info("Closing bag writer")
         self.bag_writer.reset()
         super().destroy_node()
+
+    def vehicle_est_pose_callback(self, msg):
+        """Save data"""
+        if msg:
+            self.get_logger().info(f"Received Estimated Vehicle Pose msg")
+            self.write_to_bag("/vehicle_est_pose", msg)  
 
 
 def main(args=None):
