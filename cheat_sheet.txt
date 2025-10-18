@@ -1,0 +1,15 @@
+
+
+
+
+cd Adv_Robot_Nav/VD_State_Estimation/
+source install/setup.bash
+ros2 run vd_state_estimate EKF_node
+
+
+source install/setup.bash
+ros2 launch vd_state_estimate state_estimator_launch.py 
+
+source install/setup.bash
+ros2 launch vd_sim sim_launch.py
+
