@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/VDtraj.msg"
   "msg/VDControlCMD.msg"
   "srv/VDGenTraj.srv"
+  "msg/GPSpose.msg"
   DEPENDENCIES std_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
 )
 if(BUILD_TESTING)

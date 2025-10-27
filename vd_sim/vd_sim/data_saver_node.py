@@ -5,15 +5,18 @@ from carla_msgs.msg import CarlaEgoVehicleControl
 from nav_msgs.msg import Odometry, Path
 from geometry_msgs.msg import PoseStamped, Quaternion
 import rosbag2_py
-from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, ReliabilityPolicy, DurabilityPolicy
 import shutil
 import os
 from std_msgs.msg import Float32
 from geometry_msgs.msg import Pose2D
+from vd_msgs.msg import VDpose
 
 class BagWriterNode(Node):
     def __init__(self):
         super().__init__('bag_writer_node')
+
+        
 
         # Initialize ROS bag writer
         self.bag_writer = rosbag2_py.SequentialWriter()
@@ -21,7 +24,7 @@ class BagWriterNode(Node):
         # Bag file directory and cleanup if needed
         bag_dir = "multi_topic_bag"
         if os.path.exists(bag_dir):
-            self.get_logger().info(f"Removing existing directory: {bag_dir}")
+            #self.get_logger().info(f"Removing existing directory: {bag_dir}")
             shutil.rmtree(bag_dir)  # Remove existing directory
 
         # Set storage options (bag file path and storage format)
@@ -39,21 +42,18 @@ class BagWriterNode(Node):
         self.create_bag_topic('/carla/ego_vehicle/odometry', 'nav_msgs/msg/Odometry')
         self.create_bag_topic('/carla/ego_vehicle/vehicle_control_cmd', 'carla_msgs/msg/CarlaEgoVehicleControl')
         self.create_bag_topic('/carla/ego_vehicle/waypoints', 'nav_msgs/msg/Path')
-        self.create_bag_topic( '/norm_error', 'std_msgs/msgs/Float32')
-        self.create_bag_topic( '/vehicle_est_pose', 'geometry_msgs/msgs/Pose2D')
+        self.create_bag_topic( '/norm_error', 'std_msgs/msg/Float32')
+        self.create_bag_topic( '/vehicle_est_pose', 'vd_msgs/msg/VDpose')
 
         
         # Subscriptions
-        qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.BEST_EFFORT,  # Best effort, similar to TCP no delay
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=1  # Equivalent to queue_size=1)
-        )
+        qos_profile = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST, depth=1, reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE)
+
         self.create_subscription(Odometry, "/carla/ego_vehicle/odometry", self.odom_callback, qos_profile)
         self.create_subscription(CarlaEgoVehicleControl, "/carla/ego_vehicle/vehicle_control_cmd", self.control_input_callback, qos_profile)
         self.create_subscription(Path, "/carla/ego_vehicle/waypoints", self.desired_traj_callback, qos_profile)
-        self.create_subscription(Float32, "/norm_error", self.err_callback,1  )
-        self.create_subscription(Pose2D, "/vehicle_est_pose", self.vehicle_est_pose_callback, 1)
+        self.create_subscription(Float32, "/norm_error", self.err_callback, qos_profile)
+        self.create_subscription(VDpose, "/vehicle_est_pose", self.vehicle_est_pose_callback, qos_profile)
 
     def create_bag_topic(self, topic_name, type_name):
         """Create a topic in the ROS bag."""
@@ -64,22 +64,22 @@ class BagWriterNode(Node):
                 serialization_format='cdr'
             )
         )
-        self.get_logger().info(f"Created topic: {topic_name}")
+        #self.get_logger().info(f"Created topic: {topic_name}")
 
     def err_callback(self, msg):
         """Handle err messages."""
-        self.get_logger().info(f"Received err message")
+        #self.get_logger().info(f"Received err message")
         self.write_to_bag("/norm_error", msg) 
 
     def odom_callback(self, msg):
         """Handle odometry messages."""
-        self.get_logger().info(f"Received Odometry message")
+        #self.get_logger().info(f"Received Odometry message")
         self.write_to_bag("/carla/ego_vehicle/odometry", msg)
 
     def control_input_callback(self, msg):
         msg.steer = msg.steer * 0.7 # steer is between -1 to +1 between -0.7 to +0.7 radians
         """Handle control input messages."""
-        self.get_logger().info(f"Received FMNCommand message")
+        #self.get_logger().info(f"Received FMNCommand message")
         self.write_to_bag("/carla/ego_vehicle/vehicle_control_cmd", msg)
 
     def desired_traj_callback(self, msg):
@@ -87,12 +87,12 @@ class BagWriterNode(Node):
         if len(msg.poses) > 0:  # Ensure there is at least one point in the trajectory
             # Get the 0th point (first point)
             first_point = msg.poses[0]
-            self.get_logger().info(f"Received TrajCommand message with first point: {first_point}")
+            #self.get_logger().info(f"Received TrajCommand message with first point: {first_point}")
             self.write_to_bag("/carla/ego_vehicle/waypoints", msg)  # Save the entire TrajCommand message (or just the first point if needed)
 
     def write_to_bag(self, topic_name, message):
         """Write a message to the ROS bag."""
-        self.get_logger().info(f"Writing message to topic: {topic_name}")
+        #self.get_logger().info(f"Writing message to topic: {topic_name}")
         self.bag_writer.write(
             topic_name,
             self.serialize_message(message),
@@ -106,14 +106,14 @@ class BagWriterNode(Node):
 
     def destroy(self):
         """Ensure the bag writer is properly closed."""
-        self.get_logger().info("Closing bag writer")
+        #self.get_logger().info("Closing bag writer")
         self.bag_writer.reset()
         super().destroy_node()
 
     def vehicle_est_pose_callback(self, msg):
         """Save data"""
         if msg:
-            self.get_logger().info(f"Received Estimated Vehicle Pose msg")
+            #self.get_logger().info(f"Received Estimated Vehicle Pose msg")
             self.write_to_bag("/vehicle_est_pose", msg)  
 
 

@@ -55,13 +55,13 @@ namespace nmpc_control_nodelet
 
     clock_ = rclcpp::Clock();
     pre_odom_quat_ << 1.0, 0.0, 0.0, 0.0;
-    std::cout << "debug breakpont 2";
+    //std::cout << "debug breakpont 2";
     //set qos
     auto qos_profile_ = this->create_custom_qos();
     //punlsihers
     pub_control_cmd_ = this->create_publisher<carla_msgs::msg::CarlaEgoVehicleControl>("/carla/ego_vehicle/vehicle_control_cmd",qos_profile_);
-    pub_ref_traj_ = this->create_publisher<nav_msgs::msg::Path>("reference_path", 1);
-    pub_pred_traj_ = this->create_publisher<nav_msgs::msg::Path>("predicted_path", 1);   
+    pub_ref_traj_ = this->create_publisher<nav_msgs::msg::Path>("reference_path", qos_profile_);
+    pub_pred_traj_ = this->create_publisher<nav_msgs::msg::Path>("predicted_path", qos_profile_);   
 
     //subscribers    
     sub_traj_cmd_ = this->create_subscription<nav_msgs::msg::Path>(
@@ -195,7 +195,7 @@ void NMPCControlNodelet::referenceCallback(const nav_msgs::msg::Path::SharedPtr 
 
   
   // run controller at reference frequency
-  std::cout <<"running mpc controller now"<< '\n';
+  //std::cout <<"running mpc controller now"<< '\n'; 
   
   controller_.run();
 
@@ -240,7 +240,7 @@ void NMPCControlNodelet::publishControl()
     vd_control_msg.steer = (pred_input(1) + pred_input(2))/(2 * 0.7);
     vd_control_msg.brake = -1 * pred_input(0) / 8.5;
   }
-  std::cout<< "pred_input" << pred_input << '\n';
+  //std::cout<< "pred_input" << pred_input << '\n';
   pub_control_cmd_->publish(vd_control_msg);
 
 }
@@ -300,7 +300,7 @@ void NMPCControlNodelet::publishPrediction()
 //RCLCPP_COMPONENTS_REGISTER_NODE(nmpc_control_nodelet::NMPCControlNodelet)
 
 int main(int argc, char *argv[])
-{ std::cout<<"here..inside main"<<'\n';
+{ //std::cout<<"here..inside main"<<'\n';
   rclcpp::init(argc, argv);
   rclcpp::spin(std::make_shared<nmpc_control_nodelet::NMPCControlNodelet>(rclcpp::NodeOptions())); 
   rclcpp::shutdown();

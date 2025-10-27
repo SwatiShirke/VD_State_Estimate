@@ -8,6 +8,8 @@ from rclpy.clock import Clock
 
 import numpy as np
 from std_msgs.msg import Float32
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, ReliabilityPolicy, DurabilityPolicy
+
 
 ref_vel = 15.0
 class CarlaRosPublisher(Node):
@@ -21,8 +23,8 @@ class CarlaRosPublisher(Node):
         
         self.client.set_timeout(10.0)
         self.world = self.client.get_world()
-        self.T_pred = 0.02 
-        self.N = 10
+        self.T_pred = 0.1
+        self.N = 10 
         # Retrieve the vehicle using role name
         self.role_name = VEHICLE_ROLE_NAME
         self.vehicle = self.get_vehicle_by_role_name()
@@ -30,9 +32,11 @@ class CarlaRosPublisher(Node):
         if self.vehicle == None:
             raise RuntimeError(f"Vehicle with ID {self.role_name} not found!")        
         #ROS 2 Publishers
-        self.odom_pub = self.create_publisher(Odometry, '/carla/ego_vehicle/odometry', 10)
-        self.waypoints_pub = self.create_publisher(Path, '/carla/ego_vehicle/waypoints', 10)
-        self.err_pub = self.create_publisher(Float32, '/norm_error', 1)
+        qos_profile = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST, depth=1, reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE)
+
+        self.odom_pub = self.create_publisher(Odometry, '/carla/ego_vehicle/odometry', qos_profile)
+        self.waypoints_pub = self.create_publisher(Path, '/carla/ego_vehicle/waypoints', qos_profile)
+        self.err_pub = self.create_publisher(Float32, '/norm_error', qos_profile)
         self.ref_waypoint = None
         self.current_loc = None
         self.goal_loc = carla.Location(x=225, y=-50, z=1)

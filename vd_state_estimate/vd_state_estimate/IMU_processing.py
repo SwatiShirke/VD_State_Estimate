@@ -7,11 +7,15 @@ import numpy as np
 from std_msgs.msg import Float32
 import carla
 from sensor_msgs.msg import Imu
+from rclpy.qos import QoSProfile, QoSHistoryPolicy, ReliabilityPolicy, DurabilityPolicy
+
 
 
 class IMU(Node):
     def __init__(self, VEHICLE_ROLE_NAME):
         super().__init__('IMU_processing')
+
+        qos_profile = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST, depth=1, reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE)
 
         ##set all bias covar, random walk, white noise covar
         ##connect with Carla server
@@ -27,17 +31,20 @@ class IMU(Node):
          
         
         ## add imu
+        self.dt = 0.03 # 1000 hz 
         imu_bp = self.world.get_blueprint_library().find('sensor.other.imu')
-        imu_bp.set_attribute('sensor_tick', '0.001')  # 100 Hz
-        imu_bp.set_attribute('noise_accel_stddev_x', '0.1')
-        imu_bp.set_attribute('noise_accel_stddev_y', '0.1')
-        imu_bp.set_attribute('noise_gyro_stddev_z', '0.1')
+        imu_bp.set_attribute('sensor_tick',  str(self.dt))  # 1000 Hz
+        imu_bp.set_attribute('noise_accel_stddev_x', str(0.001))  #160 mu*g  = 160 * 10^-6 * 9.8 m/s^2/root(hz) = 160*9.8 * 1e-6
+        imu_bp.set_attribute('noise_accel_stddev_y', str(0.001))    # rad/sec = 160*9.8 * 1e-6
+        imu_bp.set_attribute('noise_gyro_stddev_z', str(0.001))  #0.008 / pi/180      = 0.008 * 3.14/180     
+        imu_bp.set_attribute('noise_gyro_bias_z', str(0.001))   #0.5 dps =  0.5 * 3.14/180 
+        
         imu_transform = carla.Transform(carla.Location(x=0.0, y=0.0, z=0.0))  # Center of vehicle
         self.imu_sensor = self.world.spawn_actor(imu_bp, imu_transform, attach_to=self.vehicle)
         
         
         #publisher
-        self.publisher = self.create_publisher(Imu, 'IMU_data', 10)
+        self.publisher = self.create_publisher(Imu, 'IMU_data', qos_profile)
         self.x = 0.0
         self.y = 0.0 
         self.filtering_type =  "median"
