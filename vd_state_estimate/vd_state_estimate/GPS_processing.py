@@ -31,6 +31,7 @@ class GPS(Node):
             raise RuntimeError(f"Vehicle with ID {self.role_name} not found!")
         vehicle_transform = self.vehicle.get_transform() 
         gps_transform = carla.Transform(carla.Location(x=0, y=0, z=0))  
+        print("gps_transform", gps_transform)
         self.gnss_bp = self.world.get_blueprint_library().find('sensor.other.gnss')
         self.dt = 0.01 
 

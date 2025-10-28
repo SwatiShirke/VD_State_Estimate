@@ -40,6 +40,7 @@ class IMU(Node):
         imu_bp.set_attribute('noise_gyro_bias_z', str(0.001))   #0.5 dps =  0.5 * 3.14/180 
         
         imu_transform = carla.Transform(carla.Location(x=0.0, y=0.0, z=0.0))  # Center of vehicle
+        print("imu_transform", imu_transform)
         self.imu_sensor = self.world.spawn_actor(imu_bp, imu_transform, attach_to=self.vehicle)
         
         

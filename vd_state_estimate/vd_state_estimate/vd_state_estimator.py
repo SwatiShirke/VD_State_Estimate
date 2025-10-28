@@ -35,13 +35,13 @@ class state_estim_node(Node):
         self.P = np.zeros((8,8)) 
 
         ##IMU noise      
-        w_a = [0.0001, 0.0001]            ## std deviation accelerometer for both x and y m/s^2/hz # [160*9.8 * 1e-6 , 160*9.8 *1e-6]
+        w_a = [0.001, 0.001]            ## std deviation accelerometer for both x and y m/s^2/hz # [160*9.8 * 1e-6 , 160*9.8 *1e-6]
         w_g = 0.001               ## std deviation  gyro = rad/sec/hz     #0.008 * 3.14/180   
         
         self.b_a = 0.01 #20*9.8* 1e-3         #m/s^2 bias init value
-        self.b_g = 0.01  #0.5 * 3.14/180       #rad/s gyro bias init value
-        w_ba = [0.001, 0.001]                   ## std devia    tion for bias acceleromteer same for x and y = 
-        w_bg = 0.001                        ## std deviation for bias gyro
+        self.b_g = 0.01  #0.5 * 3.14/180       #rad/s gyro bias init value # wokring 0.01
+        w_ba = [0.01, 0.01]                   ## std devia    tion for bias acceleromteer same for x and y = 
+        w_bg = 0.01                        ## std deviation for bias gyro # 0.01 
 
 
         self.dt = 0.03 # 1000 hz - freuqncy of IMU node

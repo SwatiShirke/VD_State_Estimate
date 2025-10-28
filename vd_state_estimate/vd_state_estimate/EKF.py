@@ -36,20 +36,20 @@ class EKF:
         accel_bias_x_covar = accel_bias_random_dev[0]**2 
         accel_bias_y_covar = accel_bias_random_dev[1]**2 
         gyro_bias_covar = gyro_bias_random_dev**2 
-        # covar_array = [ covar_acc_x, covar_acc_y , covar_gyro, accel_bias_x_covar, accel_bias_y_covar, gyro_bias_covar] 
-        # Q_mat = np.diag(covar_array)
+        covar_array = [ covar_acc_x, covar_acc_y , covar_gyro, accel_bias_x_covar, accel_bias_y_covar, gyro_bias_covar] 
+        Q_mat = np.diag(covar_array)
 
         
-        covar_dist_x = (0.5 * self.dt**2 * (white_accel_dev[0]))**2
-        covar_dist_y = (0.5 * self.dt**2 * (white_accel_dev[1]))**2
-        covar_angle = (self.dt * white_gyro_dev)**2
-        coavr_vel_x = (self.dt * white_accel_dev[0])**2 
-        coavr_vel_y = (self.dt * white_accel_dev[1])**2 
-        covar_bias_ax = accel_bias_random_dev[0]**2
-        covar_bias_ay = accel_bias_random_dev[1]**2
-        covar_bis_g = gyro_bias_random_dev**2
-        covar_array = [covar_dist_x, covar_dist_y, covar_angle, coavr_vel_x, coavr_vel_y, covar_bias_ax, covar_bias_ay,covar_bis_g]
-        Q_mat = np.diag(covar_array)
+        # covar_dist_x = (0.5 * self.dt**2 * (white_accel_dev[0]))**2
+        # covar_dist_y = (0.5 * self.dt**2 * (white_accel_dev[1]))**2
+        # covar_angle = (self.dt * white_gyro_dev)**2
+        # coavr_vel_x = (self.dt * white_accel_dev[0])**2 
+        # coavr_vel_y = (self.dt * white_accel_dev[1])**2 
+        # covar_bias_ax = accel_bias_random_dev[0]**2
+        # covar_bias_ay = accel_bias_random_dev[1]**2
+        # covar_bis_g = gyro_bias_random_dev**2
+        # covar_array = [covar_dist_x, covar_dist_y, covar_angle, coavr_vel_x, coavr_vel_y, covar_bias_ax, covar_bias_ay,covar_bis_g]
+        # Q_mat = np.diag(covar_array)
 
         return Q_mat 
 
@@ -81,8 +81,8 @@ class EKF:
         air_drag = f_drag / self.mass 
     
 
-        Vx_dt = Vy * ang_vel + accel_x  #- air_drag        +   
-        Vy_dt =  - Vx * ang_vel + accel_y #
+        Vx_dt =  accel_x  #- air_drag    # Vy * ang_vel    
+        Vy_dt =  accel_y # - Vx * ang_vel +
 
         print(" Vy * ang_vel" ,  Vy * ang_vel ,  "accel_x",  accel_x)
         print("- Vx * ang_vel ", - Vx * ang_vel , "accel_y", accel_y )
@@ -125,15 +125,12 @@ class EKF:
         print("X before", X)
         # print("S before ", S)
 
-        X, dx = self.apply_RK45(X, U)        
+        X, dx = self.apply_RK45(X, U)    
+        X[2] = (X[2] + np.pi) % (2*np.pi) - (np.pi)      
         F = self.get_FMat(X, U)
-        V = self.get_VMat(X)  
-        
-        S = F @ S @ F.T +  self.Q  #V @ self.Q @ V.T  
-
-        # print("Q", self.Q)
-        # print("F", F)
-        # print("S", S)    
+        V = self.get_VMat(X)          
+        S = F @ S @ F.T +  V @ self.Q @ V.T   #self.Q 
+   
         return X, S, dx 
 
     def get_FMat(self, X, U):
@@ -223,10 +220,12 @@ class EKF:
         print("Inside update")
        
         K = (S @ G.T) @ np.linalg.pinv(G @ S @ G.T + R )  
-        print("dx ", K @ (z - G @ X) )
+        print("dx ", K @ (z - G @ X)) 
 
-        X = X  + K @ (z - G @ X)                  
+        X = X  + K @ (z - G @ X) 
+        X[2] = (X[2] + np.pi) % (2*np.pi) - (np.pi)                
         S = S - K @ G @ S 
+
         # Joseph form (numerically stable covariance update)
         # I = np.eye(S.shape[0])        
         # S_post = (I - K @ G) @ S @ (I - K @ G).T + K @ R @ K.T
@@ -234,6 +233,7 @@ class EKF:
         # S = 0.5 * (S_post + S_post.T)
         # print("X after update", X)
         # print("S", S) 
+
         return X, S  
     
 

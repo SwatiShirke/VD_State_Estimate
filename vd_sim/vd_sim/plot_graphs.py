@@ -185,7 +185,7 @@ def plot_vehicle_data(topic_data):
         plt.legend()
         plt.xlabel('Time')
         plt.ylabel(' Yaw')        
-        plt.ylim(-3.14, 3.14)  # <-- Set Y-axis limits here
+        plt.ylim(-10, 10)  # <-- Set Y-axis limits here
         plt.title('Estimated Vs Ground truth Yaw')
         plt.grid(True)
         plt.gca().xaxis.set_major_formatter(ticker.ScalarFormatter(useOffset=False))  # Fix time axis
