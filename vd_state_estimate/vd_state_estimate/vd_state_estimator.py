@@ -39,10 +39,9 @@ class state_estim_node(Node):
         w_g = 0.001               ## std deviation  gyro = rad/sec/hz     #0.008 * 3.14/180   
         
         self.b_a = 0.01 #20*9.8* 1e-3         #m/s^2 bias init value
-        self.b_g = 0.01  #0.5 * 3.14/180       #rad/s gyro bias init value # wokring 0.01
-        w_ba = [0.01, 0.01]                   ## std devia    tion for bias acceleromteer same for x and y = 
-        w_bg = 0.01                        ## std deviation for bias gyro # 0.01 
-
+        self.b_g = 0.01  #0.5 * 3.14/180       #rad/s gyro bias init value # wokring 
+        w_ba = [0.05, 0.05]                   ## std devia    tion for bias acceleromteer same for x and y = 
+        w_bg = 0.01                        ## std deviation for bias gyro
 
         self.dt = 0.03 # 1000 hz - freuqncy of IMU node
         self.EKF = EKF(self.P, w_a, w_g, w_ba, w_bg, self.dt) 
@@ -82,19 +81,40 @@ class state_estim_node(Node):
             if self.init_count <  10:
                 pass
             else:
-                self.X = np.array([msg.x, msg.y,0.0,0,0,self.b_a,self.b_a,self.b_g])           
+                self.X = np.array([msg.x, msg.y,0.0,0,0,self.b_a,self.b_a,self.b_g])  
+                self.x_last = msg.x
+                self.y_last = msg.y         
                 self.P = np.diag(np.array([msg.covar_x, msg.covar_y, 0, 0,0,0,0,0]))            
                 #print("init state ", self.X[0:2])
                 self.GPS_init_flag = True
         else:
-            #update using filter
-            #print("before gps update", self.X[3]) 
-            z = np.array([msg.x, msg.y])
+            
+            #vel calculations
+            vel_x = (self.X[0] - self.x_last)/ self.dt
+            vel_y = (self.X[1] - self.y_last) /self.dt
+
+            #measurement vector 
+            z = np.array([msg.x, msg.y, vel_x, vel_y])
+
+            #covarince calculations
             x_covar = msg.covar_x
             y_covar = msg.covar_y
-            R = np.diag(np.array([x_covar, y_covar]))
+
+            covar_vx = 2 * x_covar**2 / self.dt**2
+            covar_vy = 2 * y_covar**2 / self.dt**2 
+
+            R = np.diag(np.array([x_covar, y_covar, covar_vx, covar_vy]))            
+            R[0,1] = 0.02
+            R[1,0] = 0.02 
+            R[0,2] = 0.02
+            R[2,0] = 0.02  
+
             #print("R", R) 
             self.X, self.P =  self.EKF.update(self.X, self.P, z, R)
+
+            self.x_last = self.X[0]
+            self.y_last = self.X[1] 
+
             #print("velocity after update", self.X[3]) 
 
 

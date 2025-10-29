@@ -65,32 +65,19 @@ class EKF:
         accel_x = U[0]   - bias_acc[0] 
         accel_y = U[1] - bias_acc[1] 
         ang_vel = U[2] - bias_gyro  
-        print(" ")
-        print("U", U)
-        print("bias_gyro", bias_gyro) 
-        print("bias_acc x, y", bias_acc)
-        print("  ")
-        #beta = np.arctan(self.lr / (self.lf + self.lr) * np.tan(theta))
-        ##model
+        
+       
         x_pos_dt = Vx * np.cos(theta) -  Vy * np.sin(theta )
         y_pos_dt = Vx * np.sin(theta) + Vy * np.cos(theta )
         theta_dt = ang_vel
 
-        ## air drag calculations
-        f_drag = 0.5 * self.rho * self.C_d * self.Af * (Vx + self.V_wind)**2
-        air_drag = f_drag / self.mass 
+        # ## air drag calculations
+        # f_drag = 0.5 * self.rho * self.C_d * self.Af * (Vx + self.V_wind)**2
+        # air_drag = f_drag / self.mass 
     
 
         Vx_dt =  accel_x  #- air_drag    # Vy * ang_vel    
-        Vy_dt =  accel_y # - Vx * ang_vel +
-
-        print(" Vy * ang_vel" ,  Vy * ang_vel ,  "accel_x",  accel_x)
-        print("- Vx * ang_vel ", - Vx * ang_vel , "accel_y", accel_y )
-
-
-        # print("Vx_dt ", Vx_dt)
-        # print("Vy_dt ", Vy_dt)
-
+        Vy_dt =  accel_y # - Vx * ang_vel 
         bias_acc_x_dt = np.random.normal(0, self.accel_bias_random_dev[0])
         bias_acc_y_dt = np.random.normal(0, self.accel_bias_random_dev[1])
         bias_gyro_dt = np.random.normal(0, self.gyro_bias_random_dev)
@@ -152,8 +139,8 @@ class EKF:
         AMat = np.array([ [0, 0, -Vx * St - Vy * Ct, Ct, - St, 0,0,0], 
                                   [0, 0, Vx * Ct - Vy * St, St, Ct, 0,0,0 ],
                                   [0, 0, 0, 0, 0, 0, 0, -1],
-                                  [0, 0, 0, 0, (w - bg), -1, 0, -Vy],
-                                  [0, 0, 0, -(w - bg), 0, 0, -1, Vx],
+                                  [0, 0, 0, 0, 0, -1, 0, 0],
+                                  [0, 0, 0, 0, 0, 0, -1, 0],
                                   [0, 0, 0, 0, 0, 0, 0, 0],
                                   [0, 0, 0, 0, 0, 0, 0, 0],
                                   [0, 0, 0, 0, 0, 0, 0, 0] ])
@@ -185,8 +172,8 @@ class EKF:
         Mat = np.array([ [0,0,0,0,0,0],
                          [0,0,0,0,0,0],
                          [0,0,1,0,0,0],
-                         [1,0,Vy,0,0,0],
-                         [0,1,-Vx, 0,0,0],
+                         [1,0,0,0,0,0],
+                         [0,1,0, 0,0,0],
                          [0,0,0,1,0,0],
                          [0,0,0,0,1,0],
                          [0,0,0,0,0,1]], dtype=float)
@@ -197,7 +184,10 @@ class EKF:
     
     def get_GMat(self):
         GMat = np.array([[1,0,0,0,0,0,0,0],
-                         [0,1,0,0,0,0,0,0]])
+                         [0,1,0,0,0,0,0,0],
+                         [0,0,1,0,0,0,0,0],
+                         [0,0,0,1,0,0,0,0]
+                         ])
         
         return GMat
 
@@ -225,6 +215,8 @@ class EKF:
         X = X  + K @ (z - G @ X) 
         X[2] = (X[2] + np.pi) % (2*np.pi) - (np.pi)                
         S = S - K @ G @ S 
+
+        
 
         # Joseph form (numerically stable covariance update)
         # I = np.eye(S.shape[0])        
