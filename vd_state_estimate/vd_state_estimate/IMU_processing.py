@@ -34,9 +34,9 @@ class IMU(Node):
         self.dt = 0.03 # 1000 hz 
         imu_bp = self.world.get_blueprint_library().find('sensor.other.imu')
         imu_bp.set_attribute('sensor_tick',  str(self.dt))  # 1000 Hz
-        imu_bp.set_attribute('noise_accel_stddev_x', str(0.001))  #160 mu*g  = 160 * 10^-6 * 9.8 m/s^2/root(hz) = 160*9.8 * 1e-6
-        imu_bp.set_attribute('noise_accel_stddev_y', str(0.001))    # rad/sec = 160*9.8 * 1e-6
-        imu_bp.set_attribute('noise_gyro_stddev_z', str(0.001))  #0.008 / pi/180      = 0.008 * 3.14/180     
+        imu_bp.set_attribute('noise_accel_stddev_x', str(0.0001))  #160 mu*g  = 160 * 10^-6 * 9.8 m/s^2/root(hz) = 160*9.8 * 1e-6
+        imu_bp.set_attribute('noise_accel_stddev_y', str(0.0001))    # rad/sec = 160*9.8 * 1e-6
+        imu_bp.set_attribute('noise_gyro_stddev_z', str(0.0001))  #0.008 / pi/180      = 0.008 * 3.14/180     
         imu_bp.set_attribute('noise_gyro_bias_z', str(0.001))   #0.5 dps =  0.5 * 3.14/180 
         
         imu_transform = carla.Transform(carla.Location(x=0.0, y=0.0, z=0.0))  # Center of vehicle
@@ -48,9 +48,9 @@ class IMU(Node):
         self.publisher = self.create_publisher(Imu, 'IMU_data', qos_profile)
         self.x = 0.0
         self.y = 0.0 
-        self.filtering_type =  "median"
+        self.filtering_type =  "mean"
         self.imu_sensor.listen(self.imu_callback) 
-        self.buffer_size = 10
+        self.buffer_size = 10   
         self.IMU_data = np.zeros((self.buffer_size, 3))  # IMU buffer 
         self.buffer_index = 0
         
@@ -74,16 +74,22 @@ class IMU(Node):
         self.buffer_index = self.buffer_index % self.buffer_size
 
         
-        if self.filtering_type == "mean":                    #moving average 
-            processed_data = np.mean(self.IMU_data, axis = 0)  
-        elif self.filtering_type == "median":                #median filtering
-            processed_data = np.median(self.IMU_data, axis = 0)   #no filtering 
-        else :
-            processed_data = [data.accelerometer.x, data.accelerometer.y, data.gyroscope.z]
+        # if self.filtering_type == "mean":                    #moving average 
+        #     processed_data = np.mean(self.IMU_data, axis = 0)  
+        # elif self.filtering_type == "median":                #median filtering
+        #     processed_data = np.median(self.IMU_data, axis = 0)   #no filtering 
+        # else :
+        #     processed_data = [data.accelerometer.x, data.accelerometer.y, data.gyroscope.z]
+
+        data_mean = np.mean(self.IMU_data, axis = 0).reshape(3, 1)
+        data_median = np.median(self.IMU_data, axis = 0).reshape(3, 1)
+
+        alpha = 0.65 * np.ones((3,1))
+        data_filtered = alpha * data_median + (1-alpha) * data_median
         
-        msg.linear_acceleration.x = processed_data[0]
-        msg.linear_acceleration.y = processed_data[1]
-        msg.angular_velocity.z = processed_data[2]         
+        msg.linear_acceleration.x = data_filtered[0,0]
+        msg.linear_acceleration.y = data_filtered[1,0]
+        msg.angular_velocity.z = data_filtered[2,0]          
         self.publisher.publish(msg) 
 
 

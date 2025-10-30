@@ -23,6 +23,7 @@ class EKF:
         self.mass = 2000 
         self.lr = 2.00
         self.lf = 2.00
+        
 
     def crete_Q_mat(self, white_accel_dev, white_gyro_dev, accel_bias_random_dev, gyro_bias_random_dev):        
         # coavr_vel = self.dt * covar_acc
@@ -66,18 +67,14 @@ class EKF:
         accel_y = U[1] - bias_acc[1] 
         ang_vel = U[2] - bias_gyro  
         
-       
-        x_pos_dt = Vx * np.cos(theta) -  Vy * np.sin(theta )
-        y_pos_dt = Vx * np.sin(theta) + Vy * np.cos(theta )
+        #beta = np.arctan2(self.lr * np.tan(theta), (self.lf + self.lr))
+        x_pos_dt = Vx * np.cos(theta) -  Vy * np.sin(theta)
+        y_pos_dt = Vx * np.sin(theta) + Vy * np.cos(theta)
         theta_dt = ang_vel
 
-        # ## air drag calculations
-        # f_drag = 0.5 * self.rho * self.C_d * self.Af * (Vx + self.V_wind)**2
-        # air_drag = f_drag / self.mass 
-    
-
-        Vx_dt =  accel_x  #- air_drag    # Vy * ang_vel    
-        Vy_dt =  accel_y # - Vx * ang_vel 
+       
+        Vx_dt =    Vy * ang_vel  + accel_x  #- air_drag    #   
+        Vy_dt =  - Vx * ang_vel  + accel_y  # 
         bias_acc_x_dt = np.random.normal(0, self.accel_bias_random_dev[0])
         bias_acc_y_dt = np.random.normal(0, self.accel_bias_random_dev[1])
         bias_gyro_dt = np.random.normal(0, self.gyro_bias_random_dev)
@@ -120,6 +117,51 @@ class EKF:
    
         return X, S, dx 
 
+
+    def get_FMat_New(self, X, U):
+        x_pos, y_pos, theta, Vx, Vy, bax, bay, bg = X
+        ax, ay, w = U
+
+        # Precompute sideslip beta and its derivative
+        beta = np.arctan2(self.lr * np.tan(theta), (self.lf + self.lr))
+        dbeta_dtheta = (self.lr / (self.lf + self.lr)) / (np.cos(theta)**2 + (self.lr / (self.lf + self.lr))**2 * np.tan(theta)**2)
+
+        St = np.sin(theta)
+        Ct = np.cos(theta)
+        s = np.sin(theta + beta)
+        c = np.cos(theta + beta)
+        one_plus_dtheta = 1 + dbeta_dtheta
+
+        F = np.zeros((8,8))
+
+        # x_pos_dot derivatives
+        F[0,2] = -Vx * s * one_plus_dtheta - Vy * c * one_plus_dtheta
+        F[0,3] = c
+        F[0,4] = -s
+
+        # y_pos_dot derivatives
+        F[1,2] = Vx * c * one_plus_dtheta - Vy * s * one_plus_dtheta
+        F[1,3] = s
+        F[1,4] = c
+
+        # theta_dot derivatives
+        F[2,7] = -1  # d(theta_dot)/d(bg)
+
+        # Vx_dot derivatives
+        F[3,5] = -1  # d(Vx_dot)/d(bax)
+
+        # Vy_dot derivatives
+        F[4,6] = -1  # d(Vy_dot)/d(bay)
+
+        ##for cross-coupling terms 
+        F[3,4] = (w-bg)
+        F[3,7] = -Vy
+        F[4,3] = -(w-bg) 
+        F[4,7] = Vx
+
+        F_mat = np.eye(8) + self.dt * F
+        return F_mat
+
     def get_FMat(self, X, U):
         x_pos = X[0]
         y_pos = X[1] 
@@ -135,12 +177,15 @@ class EKF:
 
         St = np.sin(theta)
         Ct = np.cos(theta)
+        
 
         AMat = np.array([ [0, 0, -Vx * St - Vy * Ct, Ct, - St, 0,0,0], 
                                   [0, 0, Vx * Ct - Vy * St, St, Ct, 0,0,0 ],
                                   [0, 0, 0, 0, 0, 0, 0, -1],
-                                  [0, 0, 0, 0, 0, -1, 0, 0],
-                                  [0, 0, 0, 0, 0, 0, -1, 0],
+                                  [0, 0, 0, 0, (w-bg), -1, 0, -Vy],
+                                  #[0, 0, 0, 0, 0, -1, 0, 0],
+                                  [0, 0, 0, -(w-bg), 0, 0, -1, Vx],
+                                  #[0, 0, 0, 0, 0, 0, -1, 0],
                                   [0, 0, 0, 0, 0, 0, 0, 0],
                                   [0, 0, 0, 0, 0, 0, 0, 0],
                                   [0, 0, 0, 0, 0, 0, 0, 0] ])
@@ -172,8 +217,8 @@ class EKF:
         Mat = np.array([ [0,0,0,0,0,0],
                          [0,0,0,0,0,0],
                          [0,0,1,0,0,0],
-                         [1,0,0,0,0,0],
-                         [0,1,0, 0,0,0],
+                         [1,0,Vy,0,0,0],
+                         [0,1,-Vx, 0,0,0],                       
                          [0,0,0,1,0,0],
                          [0,0,0,0,1,0],
                          [0,0,0,0,0,1]], dtype=float)
