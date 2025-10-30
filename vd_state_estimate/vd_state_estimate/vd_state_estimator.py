@@ -41,7 +41,7 @@ class state_estim_node(Node):
         self.b_a = 0.01 #20*9.8* 1e-3         #m/s^2 bias init value
         self.b_g = 0.01  #0.5 * 3.14/180       #rad/s gyro bias init value # wokring 
         w_ba = [0.05, 0.05]                   ## std devia    tion for bias acceleromteer same for x and y = 
-        w_bg = 0.01                           ## std deviation for bias gyro
+        w_bg = 0.001                           ## std deviation for bias gyro
 
         self.dt = 0.03 # 1000 hz - freuqncy of IMU node
         self.EKF = EKF(self.P, w_a, w_g, w_ba, w_bg, self.dt) 

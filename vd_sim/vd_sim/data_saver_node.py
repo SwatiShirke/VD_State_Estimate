@@ -22,7 +22,7 @@ class BagWriterNode(Node):
         self.bag_writer = rosbag2_py.SequentialWriter()
 
         # Bag file directory and cleanup if needed
-        bag_dir = "multi_topic_bag"
+        bag_dir = "/home/swati/Adv_Robot_Nav/VD_State_Estimation/multi_topic_bag"
         if os.path.exists(bag_dir):
             #self.get_logger().info(f"Removing existing directory: {bag_dir}")
             shutil.rmtree(bag_dir)  # Remove existing directory

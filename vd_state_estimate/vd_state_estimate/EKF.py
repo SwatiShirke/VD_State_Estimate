@@ -56,6 +56,30 @@ class EKF:
 
     def process_model(self, X, U):
         ##extract states 
+        # x_pos = X[0]
+        # y_pos = X[1] 
+        # theta = X[2]
+        # Vx = X[3]
+        # Vy = X[4]
+        # bias_acc = X[5:7]
+        # bias_gyro = X[7]
+        # accel_x = U[0]   - bias_acc[0] 
+        # accel_y = U[1] - bias_acc[1] 
+        # ang_vel = U[2] - bias_gyro          
+        # accel_vec = np.array([accel_x, accel_y]).reshape(2,1)
+
+        # x_pos_dt = Vx
+        # y_pos_dt = Vy
+        # theta_dt = ang_vel
+        # R_mat = np.array([[np.cos(theta), -np.sin(theta)],
+        #          [np.sin(theta), np.cos(theta)]]).reshape(2,2)        
+        # vel_ref_dt = R_mat @ accel_vec       
+        # Vx_dt =  vel_ref_dt[0,0] 
+        # Vy_dt =  vel_ref_dt[1,0]
+        # bias_acc_x_dt = np.random.normal(0, self.accel_bias_random_dev[0])
+        # bias_acc_y_dt = np.random.normal(0, self.accel_bias_random_dev[1])
+        # bias_gyro_dt = np.random.normal(0, self.gyro_bias_random_dev)
+
         x_pos = X[0]
         y_pos = X[1] 
         theta = X[2]
@@ -67,9 +91,9 @@ class EKF:
         accel_y = U[1] - bias_acc[1] 
         ang_vel = U[2] - bias_gyro  
         
-        #beta = np.arctan2(self.lr * np.tan(theta), (self.lf + self.lr))
-        x_pos_dt = Vx * np.cos(theta) -  Vy * np.sin(theta)
-        y_pos_dt = Vx * np.sin(theta) + Vy * np.cos(theta)
+        beta = np.arctan2(self.lr * np.tan(theta), (self.lf + self.lr))
+        x_pos_dt = Vx * np.cos(theta + beta) -  Vy * np.sin(theta + beta)
+        y_pos_dt = Vx * np.sin(theta + beta) + Vy * np.cos(theta + beta)
         theta_dt = ang_vel
 
        
@@ -111,7 +135,7 @@ class EKF:
 
         X, dx = self.apply_RK45(X, U)    
         X[2] = (X[2] + np.pi) % (2*np.pi) - (np.pi)      
-        F = self.get_FMat(X, U)
+        F = self.get_FMat_New(X, U)
         V = self.get_VMat(X)          
         S = F @ S @ F.T +  V @ self.Q @ V.T   #self.Q 
    
@@ -163,6 +187,25 @@ class EKF:
         return F_mat
 
     def get_FMat(self, X, U):
+        # theta = X[2]
+        # bax, bay, bg = X[5], X[6], X[7]
+        # ax, ay, w = U
+
+        # f43 = -np.sin(theta) * (ax - bax) - np.cos(theta) * (ay - bay)
+        # f53 =  np.cos(theta) * (ax - bax) - np.sin(theta) * (ay - bay)
+
+        # F = np.zeros((8, 8))
+        # F[0, 3] = 1
+        # F[1, 4] = 1
+        # F[2, 7] = -1
+        # F[3, 2] = f43
+        # F[4, 2] = f53
+        # F[3, 5] = -np.cos(theta)
+        # F[3, 6] =  np.sin(theta)
+        # F[4, 5] = -np.sin(theta)
+        # F[4, 6] = -np.cos(theta)
+        # FMat = np.eye(8) + self.dt * F
+
         x_pos = X[0]
         y_pos = X[1] 
         theta = X[2]
@@ -191,6 +234,8 @@ class EKF:
                                   [0, 0, 0, 0, 0, 0, 0, 0] ])
         
         FMat = np.eye(8) + self.dt * AMat
+
+        
         #FMat = expm(self.dt * AMat)
  
         return FMat
@@ -202,6 +247,29 @@ class EKF:
         # it is derivative of system dynamics equations with respect to noise 
         # first 3 components are white noise, directly affects sensor reading, last 3 are bias random walk
         # X = X.reshape(X.shape[0])
+        # x_pos = X[0]
+        # y_pos = X[1] 
+        # theta = X[2]
+        # Vx = X[3]
+        # Vy = X[4]
+        # bax = X[5]
+        # bay = X[6]
+        # bg = X[7]
+        # # ax = U[0]
+        # # ay = U[1]
+        # # w = U[2]
+
+        # V = np.zeros((8, 6))
+        # V[2, 2] = 1
+        # V[3, 0] = np.cos(theta)
+        # V[3, 1] = -np.sin(theta)
+        # V[4, 0] = np.sin(theta)
+        # V[4, 1] =  np.cos(theta)
+        # V[5, 3] = 1
+        # V[6, 4] = 1
+        # V[7, 5] = 1
+        #VMat = self.dt * V     
+
         x_pos = X[0]
         y_pos = X[1] 
         theta = X[2]
@@ -223,7 +291,9 @@ class EKF:
                          [0,0,0,0,1,0],
                          [0,0,0,0,0,1]], dtype=float)
         
-        VMat = self.dt * Mat        
+        VMat = self.dt * Mat
+        
+           
         return VMat
         
     
