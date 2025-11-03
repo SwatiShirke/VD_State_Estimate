@@ -40,9 +40,9 @@ class CarlaRosPublisher(Node):
         self.ref_waypoint = None
         self.current_loc = None
         self.goal_loc = carla.Location(x=225, y=-50, z=1)
-
+        self.dt = 0.05
         # Timer for publishing at 20 Hz
-        self.create_timer(self.T_pred, self.publish_data)  # 100 Hz
+        self.create_timer(self.dt, self.publish_data)  # 100 Hz
 
     def publish_data(self):
         """Publish odometry and trajectory data."""
@@ -86,7 +86,7 @@ class CarlaRosPublisher(Node):
         odom_msg.pose.pose.position.z = vehicle_transform.location.z
 
         # Orientation: Use Yaw, Pitch, Roll (in radians)
-        yaw = (math.radians(vehicle_transform.rotation.yaw) + 2*np.pi) % (4*np.pi) - 2*np.pi
+        yaw = (math.radians(vehicle_transform.rotation.yaw) + np.pi) % (2*np.pi) - np.pi
         pitch = math.radians(vehicle_transform.rotation.pitch)
         roll = math.radians(vehicle_transform.rotation.roll)
 
@@ -139,7 +139,7 @@ class CarlaRosPublisher(Node):
             pose_stamped.pose.position.y = wp.transform.location.y
             pose_stamped.pose.position.z = wp.transform.location.z
 
-            yaw = (math.radians(wp.transform.rotation.yaw) + 2*np.pi) % (4*np.pi) - 2*np.pi
+            yaw = (math.radians(wp.transform.rotation.yaw) + np.pi) % (2*np.pi) - np.pi
             # pitch = math.radians(wp.transform.rotation.pitch)
             # roll = math.radians(wp.transform.rotation.roll)
             #x, y,z, w = self.euler_to_quaternion(roll, pitch, yaw)
