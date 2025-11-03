@@ -17,9 +17,7 @@ class GPS(Node):
         super().__init__('GPS_processing')
         qos_profile = QoSProfile(history=QoSHistoryPolicy.KEEP_LAST, depth=1, reliability=ReliabilityPolicy.BEST_EFFORT, durability=DurabilityPolicy.VOLATILE)
 
-        ##carla setup
-        # self.clock = Clock() #wall clock
-        # self.sim_clock = self.get_clock() #sim clock        
+           
         self.client = carla.Client('localhost', 2000)              
         self.client.set_timeout(10.0)
         self.world = self.client.get_world()
@@ -33,7 +31,7 @@ class GPS(Node):
         gps_transform = carla.Transform(carla.Location(x=0, y=0, z=0))  
         print("gps_transform", gps_transform)
         self.gnss_bp = self.world.get_blueprint_library().find('sensor.other.gnss')
-        self.dt = 0.01 
+        self.dt = 0.1 
 
         ## GPS accuracy is 1m - based on that 1/111km = latitude std dev
         ## init location is location of reference frame 
@@ -44,12 +42,13 @@ class GPS(Node):
         # bias settings 
         self.bias_longitude = 0.0 #3.6261e-06    # 30% of 1m = 0.3m - from this = 0.3 / 111km * cos(lat) = 
         self.bias_latitude  = 0.0 #3.6261e-06    # 30% of 1m = 0.3m - from this = 0.3 / 111km = 
-        self.long_bias_random = 0.0         # keeping it 0 as carla does handle model bias random walk  
+        self.long_bias_random = 0.0              # keeping it 0 as carla does handle model bias random walk  
         self.lat_bias_random = 0.0    
 
         ##white noise
-        self.w_long = 9e-6  #white noise std deviation in degree.    1 degree = 111km , so how much degree for 1m distance  #9e-6
-        self.w_lat = 9e-6 
+        self.sigma = 0.05                       # std deviation of RTK GPS in meters
+        self.w_long =  self.sigma / 111000                   #white noise std deviation in degree.    1 degree = 111km , so how much degree for 1m distance  #9e-6
+        self.w_lat = self.sigma / 111000 
          
         
         self.gnss_bp.set_attribute('sensor_tick', '0.1')
@@ -104,6 +103,7 @@ class GPS(Node):
         self.x = self.R_earth * del_longitude * math.cos(math.radians(self.latitude_ref))
         self.y = -self.R_earth * del_latitude
         
+        
         pose = GPSpose()
         pose.x = self.x
         pose.y = self.y
@@ -120,11 +120,9 @@ class GPS(Node):
 
         # Covariances (squared standard deviations)
         x_covar = sigma_east_m**2
-        y_covar = sigma_north_m**2 
+        y_covar = sigma_north_m**2
+        
 
-        # self.w_long = self.w_long_base * np.cos(math.radians(self.latitude))
-        # x_covar = (self.R_earth * math.radians(self.w_long)* math.cos(math.radians(self.latitude)) )**2
-        # y_covar = (- self.R_earth * math.radians(self.w_lat))**2
         pose.covar_x = x_covar
         pose.covar_y = y_covar
         self.publisher.publish(pose)

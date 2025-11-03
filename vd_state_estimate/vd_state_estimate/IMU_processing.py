@@ -31,13 +31,13 @@ class IMU(Node):
          
         
         ## add imu
-        self.dt = 0.03 # 1000 hz 
+        self.dt = 0.05 # 1000 hz 
         imu_bp = self.world.get_blueprint_library().find('sensor.other.imu')
-        imu_bp.set_attribute('sensor_tick',  str(self.dt))  # 1000 Hz
-        imu_bp.set_attribute('noise_accel_stddev_x', str(0.0001))  #160 mu*g  = 160 * 10^-6 * 9.8 m/s^2/root(hz) = 160*9.8 * 1e-6
-        imu_bp.set_attribute('noise_accel_stddev_y', str(0.0001))    # rad/sec = 160*9.8 * 1e-6
-        imu_bp.set_attribute('noise_gyro_stddev_z', str(0.0001))  #0.008 / pi/180      = 0.008 * 3.14/180     
-        imu_bp.set_attribute('noise_gyro_bias_z', str(0.001))   #0.5 dps =  0.5 * 3.14/180 
+        imu_bp.set_attribute('sensor_tick',  str(self.dt))  # 20 Hz, low due to compute llimitation, frequency reduces when Carla is running
+        imu_bp.set_attribute('noise_accel_stddev_x', str(0.003))  # 0.003 m/s^2/root(hz)
+        imu_bp.set_attribute('noise_accel_stddev_y', str(0.003))    
+        imu_bp.set_attribute('noise_gyro_stddev_z', str(0.02 *3.14/180))  #0.008 / pi/180      = 0.008 * 3.14/180     
+        imu_bp.set_attribute('noise_gyro_bias_z', str((5 * 3.14/180)/ 3600))   #5 degrre /hr
         
         imu_transform = carla.Transform(carla.Location(x=0.0, y=0.0, z=0.0))  # Center of vehicle
         print("imu_transform", imu_transform)
